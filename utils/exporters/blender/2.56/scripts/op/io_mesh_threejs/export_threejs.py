@@ -57,31 +57,30 @@ TEMPLATE_FILE_ASCII = """\
  *
  * vertices: %(nvertex)d
  * faces: %(nface)d
+ * normals: %(nnormal)d
+ * uvs: %(nuv)d
+ * colors: %(ncolor)d
  * materials: %(nmaterial)d
  *
  */
 
 var model = {
 
+    'version' : 2,
+    
     'materials': [%(materials)s],
-
-    'normals': [%(normals)s],
 
     'vertices': [%(vertices)s],
 
+    'morphTargets': [],
+
+    'normals': [%(normals)s],
+
     'colors': [%(colors)s],
 
-    'uvs': [%(uvs)s],
+    'uvs': [[%(uvs)s]],
 
-    'triangles': [%(triangles)s],
-    'trianglesUvs': [%(trianglesUvs)s],
-    'trianglesNormals': [%(trianglesNormals)s],
-    'trianglesNormalsUvs': [%(trianglesNormalsUvs)s],
-
-    'quads': [%(quads)s],
-    'quadsUvs': [%(quadsUvs)s],
-    'quadsNormals': [%(quadsNormals)s],
-    'quadsNormalsUvs': [%(quadsNormalsUvs)s],
+    'faces': [%(faces)s],
 
     'end': (new Date).getTime()
 
@@ -92,24 +91,9 @@ postMessage( model );
 
 TEMPLATE_VERTEX = "%f,%f,%f"
 
-TEMPLATE_UV_TRI = "%f,%f,%f,%f,%f,%f"
-TEMPLATE_UV_QUAD = "%f,%f,%f,%f,%f,%f,%f,%f"
-
-TEMPLATE_TRI = "%d,%d,%d,%d"
-TEMPLATE_QUAD = "%d,%d,%d,%d,%d"
-
-TEMPLATE_TRI_UV = "%d,%d,%d,%d,%d,%d,%d"
-TEMPLATE_QUAD_UV = "%d,%d,%d,%d,%d,%d,%d,%d,%d"
-
-TEMPLATE_TRI_N = "%d,%d,%d,%d,%d,%d,%d"
-TEMPLATE_QUAD_N = "%d,%d,%d,%d,%d,%d,%d,%d,%d"
-
-TEMPLATE_TRI_N_UV = "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d"
-TEMPLATE_QUAD_N_UV = "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d"
-
 TEMPLATE_N = "%f,%f,%f"
-TEMPLATE_C = "%f,%f,%f"
 TEMPLATE_UV = "%f,%f"
+TEMPLATE_C = "0x%06x"
 
 # #####################################################
 # Utils
@@ -119,7 +103,7 @@ def veckey3d(v):
 
 def veckey2d(v):
     return round(v[0], 6), round(v[1], 6)
-
+    
 def get_normal_indices(v, normals, mesh):
     n = []
     mv = mesh.vertices
@@ -127,13 +111,21 @@ def get_normal_indices(v, normals, mesh):
         n.append( normals[veckey3d(mv[i].normal)] )
     return n
 
-def get_uv_indices(f, uvs, mesh):
+def get_uv_indices(face_index, uvs, mesh):
     uv = []
-    face_index = f[1]
     uv_layer = mesh.uv_textures.active.data
     for i in uv_layer[face_index].uv:
         uv.append( uvs[veckey2d(i)] )
     return uv
+
+def get_color_indices(face_index, colors, mesh):
+    c = []
+    color_layer = mesh.vertex_colors.active.data
+    face_colors = color_layer[face_index]
+    face_colors = face_colors.color1, face_colors.color2, face_colors.color3, face_colors.color4
+    for i in face_colors:
+        c.append( colors[hexcolor(i)] )
+    return c
 
 # #####################################################
 # Alignment
@@ -216,136 +208,107 @@ def bottom(vertices):
 # #####################################################
 # Elements
 # #####################################################
+def hexcolor(c):
+    return ( int(c[0] * 255) << 16  ) + ( int(c[1] * 255) << 8 ) + int(c[2] * 255)
+    
 def generate_vertex(v):
     return TEMPLATE_VERTEX % (v.co.x, v.co.y, v.co.z)
 
 def generate_normal(n):
     return TEMPLATE_N % (n[0], n[1], n[2])
-
+    
 def generate_vertex_color(c):
-    return TEMPLATE_C % (c[0], c[1], c[2])
+    return TEMPLATE_C % c
     
 def generate_uv(uv):
     return TEMPLATE_UV % (uv[0], 1.0 - uv[1])
 
-def generate_triangle(f):
-    v = f[0].vertices
-    m = f[0].material_index
-    return TEMPLATE_TRI % (v[0], v[1], v[2],
-                           m)
+def setBit(value, position, on):
+    if on:
+        mask = 1 << position
+        return (value | mask)
+    else:
+        mask = ~(1 << position)
+        return (value & mask)    
+    
+def generate_face(f, faceIndex, normals, uvs, colors, mesh, use_normals, use_colors, use_uv_coords):
+    isTriangle = ( len(f.vertices) == 3 )
+    
+    if isTriangle:
+        nVertices = 3
+    else:
+        nVertices = 4
+        
+    hasMaterial = True # for the moment objects without materials get default material
+    
+    hasFaceUvs = False # not supported in Blender
+    hasFaceVertexUvs = use_uv_coords
 
-def generate_quad(f):
-    v = f[0].vertices
-    m = f[0].material_index
-    return TEMPLATE_QUAD % (v[0], v[1], v[2], v[3],
-                            m)
+    hasFaceNormals = False # don't export any face normals (as they are computed in engine)
+    hasFaceVertexNormals = use_normals
+    
+    hasFaceColors = False       # not supported in Blender
+    hasFaceVertexColors = use_colors
 
-def generate_triangle_n(f, normals, mesh):
-    v = f[0].vertices
-    m = f[0].material_index
-    n = get_normal_indices(v, normals, mesh)
+    faceType = 0
+    faceType = setBit(faceType, 0, not isTriangle)
+    faceType = setBit(faceType, 1, hasMaterial)
+    faceType = setBit(faceType, 2, hasFaceUvs)
+    faceType = setBit(faceType, 3, hasFaceVertexUvs)
+    faceType = setBit(faceType, 4, hasFaceNormals)
+    faceType = setBit(faceType, 5, hasFaceVertexNormals)
+    faceType = setBit(faceType, 6, hasFaceColors)
+    faceType = setBit(faceType, 7, hasFaceVertexColors)    
+    
+    faceData = []
+    
+    # order is important, must match order in JSONLoader
+    
+    # face type
+    # vertex indices
+    # material index
+    # face uvs index
+    # face vertex uvs indices
+    # face color index
+    # face vertex colors indices
+    
+    faceData.append(faceType)    
+    
+    # must clamp in case on polygons bigger than quads
+    for i in range(nVertices):
+        index = f.vertices[i]
+        faceData.append(index)
+    
+    if hasMaterial:
+        faceData.append( f.material_index )
 
-    return TEMPLATE_TRI_N % (v[0], v[1], v[2],
-                             m,
-                             n[0], n[1], n[2])
+    if hasFaceVertexUvs:
+        uv = get_uv_indices(faceIndex, uvs, mesh)
+        for i in range(nVertices):
+            index = uv[i]
+            faceData.append(index)
 
-def generate_quad_n(f, normals, mesh):
-    v = f[0].vertices
-    m = f[0].material_index
-    n = get_normal_indices(v, normals, mesh)
+    if hasFaceVertexNormals:
+        n = get_normal_indices(f.vertices, normals, mesh)
+        for i in range(nVertices):
+            index = n[i]
+            faceData.append(index)
+            
+    if hasFaceVertexColors:
+        c = get_color_indices(faceIndex, colors, mesh)
+        for i in range(nVertices):
+            index = c[i]
+            faceData.append(index)
 
-    return TEMPLATE_QUAD_N % (v[0], v[1], v[2], v[3],
-                              m,
-                              n[0], n[1], n[2], n[3])
+    return ",".join( map(str, faceData) )
 
-def generate_triangle_uv(f, uvs, mesh):
-    v = f[0].vertices
-    m = f[0].material_index
-    uv = get_uv_indices(f, uvs, mesh)
-
-    return TEMPLATE_TRI_UV % (v[0], v[1], v[2],
-                              m,
-                              uv[0], uv[1], uv[2])
-
-def generate_quad_uv(f, uvs, mesh):
-    v = f[0].vertices
-    m = f[0].material_index
-    uv = get_uv_indices(f, uvs, mesh)
-
-    return TEMPLATE_QUAD_UV % (v[0], v[1], v[2], v[3],
-                               m,
-                               uv[0], uv[1], uv[2], uv[3])
-
-def generate_triangle_n_uv(f, normals, uvs, mesh):
-    v = f[0].vertices
-    m = f[0].material_index
-    n = get_normal_indices(v, normals, mesh)
-    uv = get_uv_indices(f, uvs, mesh)
-
-    return TEMPLATE_TRI_N_UV % (v[0], v[1], v[2],
-                                m,
-                                n[0], n[1], n[2],
-                                uv[0], uv[1], uv[2])
-
-def generate_quad_n_uv(f, normals, uvs, mesh):
-    v = f[0].vertices
-    m = f[0].material_index
-    n = get_normal_indices(v, normals, mesh)
-    uv = get_uv_indices(f, uvs, mesh)
-
-    return TEMPLATE_QUAD_N_UV % (v[0], v[1], v[2], v[3],
-                                 m,
-                                 n[0], n[1], n[2], n[3],
-                                 uv[0], uv[1], uv[2], uv[3])
-
-# #####################################################
-# Faces
-# #####################################################
-def sort_faces(faces, use_normals, use_uv_coords):
-    data = {
-    'triangles_flat': [],
-    'triangles_flat_uv': [],
-    'triangles_smooth': [],
-    'triangles_smooth_uv': [],
-
-    'quads_flat': [],
-    'quads_flat_uv': [],
-    'quads_smooth': [],
-    'quads_smooth_uv': []
-    }
-
-    for i, f in enumerate(faces):
-
-        if len(f.vertices) == 3:
-
-            if use_normals and use_uv_coords:
-                data['triangles_smooth_uv'].append([f,i])
-            elif use_normals and not use_uv_coords:
-                data['triangles_smooth'].append([f,i])
-            elif use_uv_coords:
-                data['triangles_flat_uv'].append([f,i])
-            else:
-                data['triangles_flat'].append([f,i])
-
-        elif len(f.vertices) == 4:
-
-            if use_normals and use_uv_coords:
-                data['quads_smooth_uv'].append([f,i])
-            elif use_normals and not use_uv_coords:
-                data['quads_smooth'].append([f,i])
-            elif use_uv_coords:
-                data['quads_flat_uv'].append([f,i])
-            else:
-                data['quads_flat'].append([f,i])
-
-    return data
 
 # #####################################################
 # Normals
 # #####################################################
 def extract_vertex_normals(mesh, use_normals):
     if not use_normals:
-        return {}
+        return {}, 0
 
     count = 0
     normals = {}
@@ -357,7 +320,7 @@ def extract_vertex_normals(mesh, use_normals):
                 normals[key] = count
                 count += 1
 
-    return normals
+    return normals, count
 
 def generate_normals(normals, use_normals):
     if not use_normals:
@@ -373,9 +336,11 @@ def generate_normals(normals, use_normals):
 # Vertex colors
 # #####################################################
 def extract_vertex_colors(mesh, use_colors):
+    
     if not use_colors:
-        return {}
+        return {}, 0
 
+    count = 0
     colors = {}
 
     color_layer = mesh.vertex_colors.active.data
@@ -384,27 +349,22 @@ def extract_vertex_colors(mesh, use_colors):
         
         face_colors = color_layer[face_index]
         face_colors = face_colors.color1, face_colors.color2, face_colors.color3, face_colors.color4
-        
-        for i, vertex_index in enumerate(face.vertices):
+    
+        for c in face_colors:
+            key = hexcolor(c)
+            if key not in colors:
+                colors[key] = count
+                count += 1
 
-            if vertex_index not in colors:
-                fc = face_colors[i]
-                colors[vertex_index] = fc[0], fc[1], fc[2]
-
-    # make sure all vertices have some color
-    for i in range(len(mesh.vertices)):
-        if i not in colors:
-            colors[i] = (0,0,0)
-            
-    return colors
+    return colors, count
 
 def generate_vertex_colors(colors, use_colors):
     if not use_colors:
         return ""
 
     chunks = []
-    for vertex_index, color in sorted(colors.items(), key=operator.itemgetter(0)):
-        chunks.append(color)
+    for key, index in sorted(colors.items(), key=operator.itemgetter(1)):
+        chunks.append(key)
 
     return ",".join(generate_vertex_color(c) for c in chunks)
 
@@ -412,8 +372,9 @@ def generate_vertex_colors(colors, use_colors):
 # UVs
 # #####################################################
 def extract_uvs(mesh, use_uv_coords):
+
     if not use_uv_coords:
-        return {}
+        return {}, 0
 
     count = 0
     uvs = {}
@@ -421,13 +382,15 @@ def extract_uvs(mesh, use_uv_coords):
     uv_layer = mesh.uv_textures.active.data
 
     for face_index, face in enumerate(mesh.faces):
+
         for uv_index, uv in enumerate(uv_layer[face_index].uv):
+
             key = veckey2d(uv)
             if key not in uvs:
                 uvs[key] = count
                 count += 1
 
-    return uvs
+    return uvs, count
 
 def generate_uvs(uvs, use_uv_coords):
     if not use_uv_coords:
@@ -499,7 +462,7 @@ def generate_materials(mtl, materials, use_colors):
         mtl_string = "\t{\n%s\n\t}" % mtl_raw
         mtl_array.append([index, mtl_string])
 
-    return ",\n\n".join([m for i,m in sorted(mtl_array)])
+    return ",\n\n".join([m for i,m in sorted(mtl_array)]), len(mtl_array)
 
 def extract_materials(mesh, scene):
     world = scene.world
@@ -580,34 +543,30 @@ def generate_ascii_model(mesh, scene, use_normals, use_colors, use_uv_coords, al
     elif align_model == 3:
         top(vertices)
 
-    sfaces = sort_faces(mesh.faces, use_normals, use_uv_coords)
+    normals, nnormal = extract_vertex_normals(mesh, use_normals)
+    colors, ncolor = extract_vertex_colors(mesh, use_colors)
+    uvs, nuv = extract_uvs(mesh, use_uv_coords)
 
-    normals = extract_vertex_normals(mesh, use_normals)
-    colors = extract_vertex_colors(mesh, use_colors)
-    uvs = extract_uvs(mesh, use_uv_coords)
-
+    mstring, nmaterial = generate_materials_string(mesh, scene, use_colors)
+    
     text = TEMPLATE_FILE_ASCII % {
-    "vertices"      : ",".join(generate_vertex(v) for v in vertices),
-
-    "triangles"     : ",".join(generate_triangle(f) for f in sfaces['triangles_flat']),
-    "trianglesUvs"  : ",".join(generate_triangle_uv(f, uvs, mesh) for f in sfaces['triangles_flat_uv']),
-    "trianglesNormals"   : ",".join(generate_triangle_n(f, normals, mesh) for f in sfaces['triangles_smooth']),
-    "trianglesNormalsUvs": ",".join(generate_triangle_n_uv(f, normals, uvs, mesh) for f in sfaces['triangles_smooth_uv']),
-
-    "quads"         : ",".join(generate_quad(f) for f in sfaces['quads_flat']),
-    "quadsUvs"      : ",".join(generate_quad_uv(f, uvs, mesh) for f in sfaces['quads_flat_uv']),
-    "quadsNormals"       : ",".join(generate_quad_n(f, normals, mesh) for f in sfaces['quads_smooth']),
-    "quadsNormalsUvs"    : ",".join(generate_quad_n_uv(f, normals, uvs, mesh) for f in sfaces['quads_smooth_uv']),
+    "nvertex"   : len(mesh.vertices),
+    "nface"     : len(mesh.faces),
+    "nuv"       : nuv,
+    "nnormal"   : nnormal,
+    "ncolor"    : ncolor,
+    "nmaterial" : nmaterial,
 
     "uvs"           : generate_uvs(uvs, use_uv_coords),
     "normals"       : generate_normals(normals, use_normals),
     "colors"        : generate_vertex_colors(colors, use_colors),
 
-    "materials" : generate_materials_string(mesh, scene, use_colors),
+    "materials" : mstring,
 
-    "nvertex"   : len(mesh.vertices),
-    "nface"     : len(mesh.faces),
-    "nmaterial" : 0
+    "vertices"      : ",".join(generate_vertex(v) for v in vertices),
+
+    "faces"     : ",".join(generate_face(f, i, normals, uvs, colors, mesh, use_normals, use_colors, use_uv_coords) for i, f in enumerate(mesh.faces))
+
     }
 
     return text

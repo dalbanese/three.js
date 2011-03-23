@@ -5,15 +5,21 @@ three.js
 
 The aim of this project is to create a lightweight 3D engine with a very low level of abstraction — in other words, for dummies. The engine can render using &lt;canvas&gt;, &lt;svg&gt; and WebGL.
 
+<<<<<<< HEAD
 [API Reference](https://github.com/mrdoob/three.js/wiki/API-Reference) — be aware that the API may change from revision to revision breaking backwards compatibility.
+=======
+[Contributors](https://github.com/mrdoob/three.js/contributors) — [API Reference](https://github.com/mrdoob/three.js/wiki/API-Reference)
+>>>>>>> d2d6a86ba7db803c707ab4c1dab56ed3016ff6a0
 
 More? [#three.js on irc.freenode.net](http://webchat.freenode.net/?channels=three.js)
+
 
 ### Examples ###
 
 
 #### WebGL (Context 3D) ####
 
+[![equirectangular](http://mrdoob.github.com/three.js/assets/examples/44_equirectangular.png)](http://mrdoob.github.com/three.js/examples/webgl_panorama_equirectangular.html)
 [![scissors](http://mrdoob.github.com/three.js/assets/examples/42_scissors.png)](http://mrdoob.github.com/three.js/examples/webgl_materials_texture_filters.html)
 [![lookat](http://mrdoob.github.com/three.js/assets/examples/41_lookat.png)](http://mrdoob.github.com/three.js/examples/misc_lookat.html)
 [![video](http://mrdoob.github.com/three.js/assets/examples/40_video.png)](http://mrdoob.github.com/three.js/examples/webgl_materials_video.html)
@@ -63,6 +69,11 @@ More? [#three.js on irc.freenode.net](http://webchat.freenode.net/?channels=thre
 
 ### Featured projects ###
 
+<<<<<<< HEAD
+=======
+[![Photoparticles](http://mrdoob.github.com/three.js/assets/projects/15_photoparticles.png)](http://lab.aerotwist.com/webgl/photoparticles/)
+[![Plumegraph](http://mrdoob.github.com/three.js/assets/projects/14_plumegraph.png)](http://plumegraph.org/)
+>>>>>>> d2d6a86ba7db803c707ab4c1dab56ed3016ff6a0
 [![HelloRacer](http://mrdoob.github.com/three.js/assets/projects/13_helloracer.png)](http://helloracer.com/webgl/)
 [![FastKat](http://mrdoob.github.com/three.js/assets/projects/12_fastkat.png)](http://www.omiod.com/games/fastkat.php)
 [![Sculpt](http://mrdoob.github.com/three.js/assets/projects/11_sculpt.png)](http://antimatter15.com/wp/2010/11/digital-sculpting-with-three-js/)
@@ -85,11 +96,12 @@ Download the [minified library](http://mrdoob.github.com/three.js/build/Three.js
 
 	<script src="js/Three.js"></script>
 
-This code creates a camera, then creates a scene object, adds a bunch of random particles in it, creates a &lt;canvas&gt; renderer and adds its viewport in the document.body element.
+This code creates a camera, then creates a scene, adds a cube on it, creates a &lt;canvas&gt; renderer and adds its viewport in the document.body element.
 
 	<script>
 
-		var camera, scene, renderer;
+		var camera, scene, renderer,
+		geometry, material, mesh;
 
 		init();
 		animate();
@@ -101,16 +113,11 @@ This code creates a camera, then creates a scene object, adds a bunch of random 
 
 			scene = new THREE.Scene();
 
-			for ( var i = 0; i < 1000; i ++ ) {
+			geometry = new Cube( 200, 200, 200 );
+			material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: true } );
 
-				var particle = new THREE.Particle( new THREE.ParticleCircleMaterial( { color: Math.random() * 0xffffff } ) );
-				particle.position.x = Math.random() * 2000 - 1000;
-				particle.position.y = Math.random() * 2000 - 1000;
-				particle.position.z = Math.random() * 2000 - 1000;
-				particle.scale.x = particle.scale.y = Math.random() * 10 + 5;
-				scene.addObject( particle );
-
-			}
+			mesh = new THREE.Mesh( geometry, material );
+			scene.addObject( mesh );
 
 			renderer = new THREE.CanvasRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
@@ -129,6 +136,9 @@ This code creates a camera, then creates a scene object, adds a bunch of random 
 
 		function render() {
 
+			mesh.rotation.x += 0.01;
+			mesh.rotation.y += 0.02;
+
 			renderer.render( scene, camera );
 
 		}
@@ -138,6 +148,19 @@ This code creates a camera, then creates a scene object, adds a bunch of random 
 
 ### Change Log ###
 
+<<<<<<< HEAD
+=======
+2011 03 22 - **r37** (208.495 KB, gzip: 51.376 KB)
+
+* Changed JSON file format. (**Re-exporting of models required**) ([alteredq](http://github.com/alteredq) and [mrdoob](http://github.com/mrdoob))
+* Updated Blender and 3DSMAX exporters for new format. ([alteredq](http://github.com/alteredq))
+* Vertex colors are now per-face ([alteredq](http://github.com/alteredq))
+* `Geometry.uvs` is now a multidimensional array (allowing infinite uv sets) ([alteredq](http://github.com/alteredq))
+* `CanvasRenderer` renders `Face4` again (without spliting to 2 `Face3`) ([mrdoob](http://github.com/mrdoob))
+* `ParticleCircleMaterial` > `ParticleCanvasMaterial`. Allowing injecting any `canvas.context` code! ([mrdoob](http://github.com/mrdoob))
+
+
+>>>>>>> d2d6a86ba7db803c707ab4c1dab56ed3016ff6a0
 2011 03 14 - **r36** (194.547 KB, gzip: 48.608 KB)
 
 * Added 3DSMAX exporter. ([alteredq](http://github.com/alteredq))
