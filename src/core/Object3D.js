@@ -151,8 +151,12 @@ THREE.Object3D.prototype = {
 
 	update: function ( parentMatrixWorld, forceUpdate, camera ) {
 
-		if ( this.visible ) {
+		this.matrixAutoUpdate && this.updateMatrix();
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> remotes/origin/master
 			this.matrixAutoUpdate && this.updateMatrix();
 
 			// update matrixWorld
@@ -160,29 +164,35 @@ THREE.Object3D.prototype = {
 			if ( this.matrixWorldNeedsUpdate || forceUpdate ) {
 
 				if ( parentMatrixWorld ) {
+=======
+		// update matrixWorld
 
-					this.matrixWorld.multiply( parentMatrixWorld, this.matrix );
+		if ( this.matrixWorldNeedsUpdate || forceUpdate ) {
 
-				} else {
+			if ( parentMatrixWorld ) {
+>>>>>>> d2d6a86ba7db803c707ab4c1dab56ed3016ff6a0
 
-					this.matrixWorld.copy( this.matrix );
+				this.matrixWorld.multiply( parentMatrixWorld, this.matrix );
 
-				}
+			} else {
 
-				this.matrixRotationWorld.extractRotation( this.matrixWorld, this.scale );
-
-				this.matrixWorldNeedsUpdate = false;
-				forceUpdate = true;
-
-			}
-
-			// update children
-
-			for ( var i = 0, l = this.children.length; i < l; i ++ ) {
-
-				this.children[ i ].update( this.matrixWorld, forceUpdate, camera );
+				this.matrixWorld.copy( this.matrix );
 
 			}
+
+			this.matrixRotationWorld.extractRotation( this.matrixWorld, this.scale );
+
+			this.matrixWorldNeedsUpdate = false;
+
+			forceUpdate = true;
+
+		}
+
+		// update children
+
+		for ( var i = 0, l = this.children.length; i < l; i ++ ) {
+
+			this.children[ i ].update( this.matrixWorld, forceUpdate, camera );
 
 		}
 
