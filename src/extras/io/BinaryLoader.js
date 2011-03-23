@@ -123,7 +123,7 @@ THREE.BinaryLoader.prototype = {
 
 	},
 
-	createBinModel: function ( data, callback, texture_path, materials ) {
+	createBinModel: function ( data, callback, texture_path, materials, ssJpg ) {
 
 		var Model = function ( texture_path ) {
 
@@ -146,7 +146,7 @@ THREE.BinaryLoader.prototype = {
 
 			THREE.Geometry.call( this );
 
-			THREE.Loader.prototype.init_materials( scope, materials, texture_path );
+			THREE.Loader.prototype.init_materials( scope, materials, texture_path, ssJpg );
 
 			md = parseMetaData( data, currentOffset );
 			currentOffset += md.header_bytes;

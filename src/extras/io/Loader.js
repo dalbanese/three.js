@@ -59,19 +59,19 @@ THREE.Loader.prototype = {
 		
 	},
 
-	init_materials: function( scope, materials, texture_path ) {
+	init_materials: function( scope, materials, texture_path, ssJpg ) {
 
 		scope.materials = [];
 
 		for ( var i = 0; i < materials.length; ++i ) {
 
-			scope.materials[ i ] = [ THREE.Loader.prototype.createMaterial( materials[ i ], texture_path ) ];
+			scope.materials[ i ] = [ THREE.Loader.prototype.createMaterial( materials[ i ], texture_path, ssJpg ) ];
 
 		}
 
 	},
 
-	createMaterial: function ( m, texture_path ) {
+	createMaterial: function ( m, texture_path, ssJpg ) {
 
 		function is_pow2( n ) {
 
@@ -140,6 +140,15 @@ THREE.Loader.prototype = {
 			mpars.map.sourceFile = m.mapDiffuse;
 			
 			load_image( mpars.map, texture_path + "/" + m.mapDiffuse );
+
+		} else if ( ssJpg ) {
+
+			texture = document.createElement( 'canvas' );
+			
+			mpars.map = new THREE.Texture( texture );
+			mpars.map.sourceFile = m.mapDiffuse;
+			
+			load_image( mpars.map, ssJpg );
 
 		} else if ( m.colorDiffuse ) {
 
