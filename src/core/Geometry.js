@@ -10,10 +10,14 @@ THREE.Geometry = function () {
 	this.id = "Geometry" + THREE.GeometryIdCounter ++;
 
 	this.vertices = [];
+	this.colors = []; // one-to-one vertex colors, used in ParticleSystem, Line and Ribbon
+
 	this.faces = [];
-	this.uvs = [];
-	this.uvs2 = [];
-	this.colors = [];
+
+	this.faceUvs = [[]];
+	this.faceVertexUvs = [[]];
+
+	this.morphTargets = [];
 
 	this.skinWeights = [];
 	this.skinIndices = [];
@@ -62,12 +66,14 @@ THREE.Geometry.prototype = {
 		var n, nl, v, vl, vertex, f, fl, face, vA, vB, vC,
 		cb = new THREE.Vector3(), ab = new THREE.Vector3();
 
+		/*
 		for ( v = 0, vl = this.vertices.length; v < vl; v ++ ) {
 
 			vertex = this.vertices[ v ];
 			vertex.normal.set( 0, 0, 0 );
 
 		}
+		*/
 
 		for ( f = 0, fl = this.faces.length; f < fl; f ++ ) {
 
@@ -218,7 +224,8 @@ THREE.Geometry.prototype = {
 		// based on http://www.terathon.com/code/tangent.html
 		// tangents go to vertices
 
-		var f, fl, v, vl, face, uv, vA, vB, vC, uvA, uvB, uvC,
+		var f, fl, v, vl, i, il, vertexIndex,
+			face, uv, vA, vB, vC, uvA, uvB, uvC,
 			x1, x2, y1, y2, z1, z2,
 			s1, s2, t1, t2, r, t, test,
 			tan1 = [], tan2 = [],
@@ -276,48 +283,49 @@ THREE.Geometry.prototype = {
 		for ( f = 0, fl = this.faces.length; f < fl; f ++ ) {
 
 			face = this.faces[ f ];
-			uv = this.uvs[ f ];
+			uv = this.faceVertexUvs[ 0 ][ f ]; // use UV layer 0 for tangents
 
 			if ( face instanceof THREE.Face3 ) {
 
 				handleTriangle( this, face.a, face.b, face.c, 0, 1, 2 );
-
-				this.vertices[ face.a ].normal.copy( face.vertexNormals[ 0 ] );
-				this.vertices[ face.b ].normal.copy( face.vertexNormals[ 1 ] );
-				this.vertices[ face.c ].normal.copy( face.vertexNormals[ 2 ] );
-
 
 			} else if ( face instanceof THREE.Face4 ) {
 
 				handleTriangle( this, face.a, face.b, face.c, 0, 1, 2 );
 				handleTriangle( this, face.a, face.b, face.d, 0, 1, 3 );
 
-				this.vertices[ face.a ].normal.copy( face.vertexNormals[ 0 ] );
-				this.vertices[ face.b ].normal.copy( face.vertexNormals[ 1 ] );
-				this.vertices[ face.c ].normal.copy( face.vertexNormals[ 2 ] );
-				this.vertices[ face.d ].normal.copy( face.vertexNormals[ 3 ] );
-
 			}
 
 		}
 
-		for ( v = 0, vl = this.vertices.length; v < vl; v ++ ) {
+		var faceIndex = [ 'a', 'b', 'c', 'd' ];
 
-			n.copy( this.vertices[ v ].normal );
-			t = tan1[ v ];
+		for ( f = 0, fl = this.faces.length; f < fl; f ++ ) {
 
-			// Gram-Schmidt orthogonalize
+			face = this.faces[ f ];
 
-			tmp.copy( t );
-			tmp.subSelf( n.multiplyScalar( n.dot( t ) ) ).normalize();
+			for ( i = 0; i < face.vertexNormals.length; i++ ) {
 
-			// Calculate handedness
+				n.copy( face.vertexNormals[ i ] );
 
-			tmp2.cross( this.vertices[ v ].normal, t );
-			test = tmp2.dot( tan2[ v ] );
-			w = (test < 0.0) ? -1.0 : 1.0;
+				vertexIndex = face[ faceIndex[ i ] ];
 
-			this.vertices[ v ].tangent.set( tmp.x, tmp.y, tmp.z, w );
+				t = tan1[ vertexIndex ];
+
+				// Gram-Schmidt orthogonalize
+
+				tmp.copy( t );
+				tmp.subSelf( n.multiplyScalar( n.dot( t ) ) ).normalize();
+
+				// Calculate handedness
+
+				tmp2.cross( face.vertexNormals[ i ], t );
+				test = tmp2.dot( tan2[ vertexIndex ] );
+				w = (test < 0.0) ? -1.0 : 1.0;
+
+				face.vertexTangents[ i ] = new THREE.Vector4( tmp.x, tmp.y, tmp.z, w );
+
+			}
 
 		}
 

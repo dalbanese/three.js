@@ -6,7 +6,7 @@
 var Cube = function ( width, height, depth, segmentsWidth, segmentsHeight, segmentsDepth, materials, flipped, sides ) {
 
 	THREE.Geometry.call( this );
-
+	
 	var scope = this,
 	width_half = width / 2,
 	height_half = height / 2,
@@ -106,7 +106,7 @@ var Cube = function ( width, height, depth, segmentsWidth, segmentsHeight, segme
 			}
 
 		}
-
+		
 		for( iy = 0; iy < gridY; iy++ ) {
 
 			for( ix = 0; ix < gridX; ix++ ) {
@@ -116,8 +116,8 @@ var Cube = function ( width, height, depth, segmentsWidth, segmentsHeight, segme
 				var c = ( ix + 1 ) + gridX1 * ( iy + 1 );
 				var d = ( ix + 1 ) + gridX1 * iy;
 
-				scope.faces.push( new THREE.Face4( a + offset, b + offset, c + offset, d + offset, null, material ) );
-				scope.uvs.push( [
+				scope.faces.push( new THREE.Face4( a + offset, b + offset, c + offset, d + offset, null, null, material ) );
+				scope.faceVertexUvs[ 0 ].push( [
 							new THREE.UV( ix / gridX, iy / gridY ),
 							new THREE.UV( ix / gridX, ( iy + 1 ) / gridY ),
 							new THREE.UV( ( ix + 1 ) / gridX, ( iy + 1 ) / gridY ),

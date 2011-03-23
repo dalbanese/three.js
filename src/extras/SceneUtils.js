@@ -16,13 +16,14 @@ var SceneUtils = {
 				geometry, material, camera, fog,
 				texture, images,
 				materials,
-				data, loader,
+				data, binLoader, jsonLoader,
 				counter_models, counter_textures,
 				total_models, total_textures,
 				result;
 
 			data = event.data;
-			loader = new THREE.Loader();
+			binLoader = new THREE.BinaryLoader();
+			jsonLoader = new THREE.JSONLoader();
 
 			counter_models = 0;
 			counter_textures = 0;
@@ -290,15 +291,15 @@ var SceneUtils = {
 
 				} else if ( g.type == "bin_mesh" ) {
 
-					loader.loadBinary( { model: g.url,
-										 callback: create_callback( dg )
-										} );
+					binLoader.load( { model: g.url,
+									  callback: create_callback( dg )
+									} );
 
 				} else if ( g.type == "ascii_mesh" ) {
 
-					loader.loadAscii( { model: g.url,
-										callback: create_callback( dg )
-										} );
+					jsonLoader.load( { model: g.url,
+									   callback: create_callback( dg )
+									} );
 
 				}
 
@@ -462,6 +463,28 @@ var SceneUtils = {
 		SceneUtils.addMesh( scene, plane, 1,     0,  hsize,       0,  pi2,    0, pi, new THREE.MeshBasicMaterial( { map: new THREE.Texture( images[2] ) } ) );
 		SceneUtils.addMesh( scene, plane, 1,     0, -hsize,       0, -pi2,    0, pi, new THREE.MeshBasicMaterial( { map: new THREE.Texture( images[3] ) } ) );
 
+	},
+	
+	showHierarchy : function ( root, visible ) {
+		
+		SceneUtils.traverseHierarchy( root, function( node ) { node.visible = visible; } );
+		
+	},
+	
+	traverseHierarchy : function ( root, callback ) {
+		
+		var n, i, l = root.children.length;
+		
+		for( i = 0; i < l; i++ ) {
+			
+			n = root.children[ i ];
+			
+			callback( n );
+			
+			SceneUtils.traverseHierarchy( n, callback );
+			
+		}
+		
 	}
 
 };

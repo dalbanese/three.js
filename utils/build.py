@@ -32,8 +32,6 @@ COMMON_FILES = [
 'animation/AnimationHandler.js',
 'animation/Animation.js',
 'cameras/Camera.js',
-'cameras/QuakeCamera.js',
-'cameras/PathCamera.js',
 'lights/Light.js',
 'lights/AmbientLight.js',
 'lights/DirectionalLight.js',
@@ -49,7 +47,7 @@ COMMON_FILES = [
 'materials/MeshFaceMaterial.js',
 'materials/MeshShaderMaterial.js',
 'materials/ParticleBasicMaterial.js',
-'materials/ParticleCircleMaterial.js',
+'materials/ParticleCanvasMaterial.js',
 'materials/ParticleDOMMaterial.js',
 'materials/Texture.js',
 'materials/RenderTarget.js',
@@ -73,8 +71,10 @@ COMMON_FILES = [
 'renderers/WebGLShaders.js',
 'renderers/WebGLRenderer.js',
 'renderers/SoundRenderer.js',
-'renderers/renderables/RenderableObject.js',
+'renderers/renderables/RenderableVertex.js',
 'renderers/renderables/RenderableFace3.js',
+'renderers/renderables/RenderableFace4.js',
+'renderers/renderables/RenderableObject.js',
 'renderers/renderables/RenderableParticle.js',
 'renderers/renderables/RenderableLine.js'
 ]
@@ -84,15 +84,20 @@ EXTRAS_FILES = [
 'extras/ImageUtils.js',
 'extras/SceneUtils.js',
 'extras/ShaderUtils.js',
-'extras/primitives/Cube.js',
-'extras/primitives/Cylinder.js',
-'extras/primitives/Plane.js',
-'extras/primitives/Sphere.js',
-'extras/primitives/Torus.js',
-'extras/primitives/Icosahedron.js',
-'extras/primitives/LathedObject.js',
-'extras/objects/MarchingCubes.js',
-'extras/io/Loader.js'
+'extras/cameras/QuakeCamera.js',
+'extras/cameras/PathCamera.js',
+'extras/geometries/Cube.js',
+'extras/geometries/Cylinder.js',
+'extras/geometries/Icosahedron.js',
+'extras/geometries/Lathe.js',
+'extras/geometries/Plane.js',
+'extras/geometries/Sphere.js',
+'extras/geometries/Torus.js',
+'extras/geometries/TorusKnot.js',
+'extras/io/Loader.js',
+'extras/io/JSONLoader.js',
+'extras/io/BinaryLoader.js',
+'extras/objects/MarchingCubes.js'
 ]
 
 CANVAS_FILES = [
@@ -112,6 +117,8 @@ CANVAS_FILES = [
 'core/Face4.js',
 'core/UV.js',
 'core/Geometry.js',
+'animation/AnimationHandler.js',
+'animation/Animation.js',
 'cameras/Camera.js',
 'lights/Light.js',
 'lights/AmbientLight.js',
@@ -127,7 +134,7 @@ CANVAS_FILES = [
 'materials/MeshNormalMaterial.js',
 'materials/MeshFaceMaterial.js',
 'materials/ParticleBasicMaterial.js',
-'materials/ParticleCircleMaterial.js',
+'materials/ParticleCanvasMaterial.js',
 'materials/Texture.js',
 'objects/Particle.js',
 'objects/Line.js',
@@ -138,8 +145,10 @@ CANVAS_FILES = [
 'renderers/Projector.js',
 'renderers/CanvasRenderer.js',
 'renderers/SoundRenderer.js',
-'renderers/renderables/RenderableObject.js',
+'renderers/renderables/RenderableVertex.js',
 'renderers/renderables/RenderableFace3.js',
+'renderers/renderables/RenderableFace4.js',
+'renderers/renderables/RenderableObject.js',
 'renderers/renderables/RenderableParticle.js',
 'renderers/renderables/RenderableLine.js'
 ]
@@ -160,6 +169,8 @@ DOM_FILES = [
 'core/Face3.js',
 'core/Face4.js',
 'core/UV.js',
+'animation/AnimationHandler.js',
+'animation/Animation.js',
 'cameras/Camera.js',
 'materials/ParticleDOMMaterial.js',
 'objects/Particle.js',
@@ -169,7 +180,7 @@ DOM_FILES = [
 'renderers/Projector.js',
 'renderers/DOMRenderer.js',
 'renderers/SoundRenderer.js',
-'renderers/renderables/RenderableParticle.js',
+'renderers/renderables/RenderableParticle.js'
 ]
 
 SVG_FILES = [
@@ -189,6 +200,8 @@ SVG_FILES = [
 'core/Face4.js',
 'core/UV.js',
 'core/Geometry.js',
+'animation/AnimationHandler.js',
+'animation/Animation.js',
 'cameras/Camera.js',
 'lights/Light.js',
 'lights/AmbientLight.js',
@@ -203,7 +216,6 @@ SVG_FILES = [
 'materials/MeshNormalMaterial.js',
 'materials/MeshFaceMaterial.js',
 'materials/ParticleBasicMaterial.js',
-'materials/ParticleCircleMaterial.js',
 'objects/Particle.js',
 'objects/Line.js',
 'objects/Mesh.js',
@@ -213,8 +225,10 @@ SVG_FILES = [
 'renderers/Projector.js',
 'renderers/SVGRenderer.js',
 'renderers/SoundRenderer.js',
-'renderers/renderables/RenderableObject.js',
+'renderers/renderables/RenderableVertex.js',
 'renderers/renderables/RenderableFace3.js',
+'renderers/renderables/RenderableFace4.js',
+'renderers/renderables/RenderableObject.js',
 'renderers/renderables/RenderableParticle.js',
 'renderers/renderables/RenderableLine.js'
 ]
@@ -236,9 +250,9 @@ WEBGL_FILES = [
 'core/Face4.js',
 'core/UV.js',
 'core/Geometry.js',
+'animation/AnimationHandler.js',
+'animation/Animation.js',
 'cameras/Camera.js',
-'cameras/QuakeCamera.js',
-'cameras/PathCamera.js',
 'lights/Light.js',
 'lights/AmbientLight.js',
 'lights/DirectionalLight.js',
@@ -254,7 +268,6 @@ WEBGL_FILES = [
 'materials/MeshFaceMaterial.js',
 'materials/MeshShaderMaterial.js',
 'materials/ParticleBasicMaterial.js',
-'materials/ParticleCircleMaterial.js',
 'materials/Texture.js',
 'materials/RenderTarget.js',
 'materials/Uniforms.js',
@@ -270,9 +283,10 @@ WEBGL_FILES = [
 'scenes/Scene.js',
 'scenes/Fog.js',
 'scenes/FogExp2.js',
+'renderers/Projector.js',
 'renderers/SoundRenderer.js',
 'renderers/WebGLShaders.js',
-'renderers/WebGLRenderer.js',
+'renderers/WebGLRenderer.js'
 ]
 
 def merge(files):
