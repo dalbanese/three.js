@@ -449,12 +449,53 @@ THREE.ShaderChunk = {
 
 		"gl_Position  = projectionMatrix * viewMatrix * objectMatrix * gl_Position;",
 
-	"#else",
+	"#endif"
 
-		"gl_Position = projectionMatrix * mvPosition;",
+	].join("\n"),
+
+	// morphing
+	
+	morphtarget_pars_vertex: [
+
+	"#ifdef USE_MORPHTARGETS",
+
+		"uniform float morphTargetInfluences[ 8 ];",
 
 	"#endif"
 
+	].join("\n"),
+
+	morphtarget_vertex: [
+
+	"#ifdef USE_MORPHTARGETS",
+
+		"vec3 morphed = vec3( 0.0, 0.0, 0.0 );",
+		"morphed += ( morphTarget0 - position ) * morphTargetInfluences[ 0 ];",
+		"morphed += ( morphTarget1 - position ) * morphTargetInfluences[ 1 ];",
+		"morphed += ( morphTarget2 - position ) * morphTargetInfluences[ 2 ];",
+		"morphed += ( morphTarget3 - position ) * morphTargetInfluences[ 3 ];",
+		"morphed += ( morphTarget4 - position ) * morphTargetInfluences[ 4 ];",
+		"morphed += ( morphTarget5 - position ) * morphTargetInfluences[ 5 ];",
+		"morphed += ( morphTarget6 - position ) * morphTargetInfluences[ 6 ];",
+		"morphed += ( morphTarget7 - position ) * morphTargetInfluences[ 7 ];",
+		"morphed += position;",
+		
+		"gl_Position = projectionMatrix * modelViewMatrix * vec4( morphed, 1.0 );",
+
+	"#endif"
+
+	].join("\n"),
+	
+	default_vertex : [
+	
+	"#ifndef USE_MORPHTARGETS",
+	"#ifndef USE_SKINNING",
+		
+		"gl_Position = projectionMatrix * mvPosition;",
+
+	"#endif",
+	"#endif"
+	
 	].join("\n")
 
 };
@@ -478,7 +519,9 @@ THREE.UniformsLib = {
 	"fogDensity": { type: "f", value: 0.00025 },
 	"fogNear"	: { type: "f", value: 1 },
 	"fogFar"	: { type: "f", value: 2000 },
-	"fogColor"	: { type: "c", value: new THREE.Color( 0xffffff ) }
+	"fogColor"	: { type: "c", value: new THREE.Color( 0xffffff ) },
+	
+	"morphTargetInfluences" : { type: "f", value: 0 }
 
 	},
 
@@ -617,6 +660,7 @@ THREE.ShaderLib = {
 			THREE.ShaderChunk[ "envmap_pars_vertex" ],
 			THREE.ShaderChunk[ "color_pars_vertex" ],
 			THREE.ShaderChunk[ "skinning_pars_vertex" ],
+			THREE.ShaderChunk[ "morphtarget_pars_vertex" ],
 
 			"void main() {",
 
@@ -627,7 +671,9 @@ THREE.ShaderLib = {
 				THREE.ShaderChunk[ "envmap_vertex" ],
 				THREE.ShaderChunk[ "color_vertex" ],
 				THREE.ShaderChunk[ "skinning_vertex" ],
-
+				THREE.ShaderChunk[ "morphtarget_vertex" ],
+				THREE.ShaderChunk[ "default_vertex" ],
+				
 			"}"
 
 		].join("\n")
@@ -677,6 +723,7 @@ THREE.ShaderLib = {
 			THREE.ShaderChunk[ "lights_pars_vertex" ],
 			THREE.ShaderChunk[ "color_pars_vertex" ],
 			THREE.ShaderChunk[ "skinning_pars_vertex" ],
+			THREE.ShaderChunk[ "morphtarget_pars_vertex" ],
 
 			"void main() {",
 
@@ -691,6 +738,8 @@ THREE.ShaderLib = {
 
 				THREE.ShaderChunk[ "lights_vertex" ],
 				THREE.ShaderChunk[ "skinning_vertex" ],
+				THREE.ShaderChunk[ "morphtarget_vertex" ],
+				THREE.ShaderChunk[ "default_vertex" ],
 
 			"}"
 
@@ -757,6 +806,7 @@ THREE.ShaderLib = {
 			THREE.ShaderChunk[ "lights_pars_vertex" ],
 			THREE.ShaderChunk[ "color_pars_vertex" ],
 			THREE.ShaderChunk[ "skinning_pars_vertex" ],
+			THREE.ShaderChunk[ "morphtarget_pars_vertex" ],
 
 			"void main() {",
 
@@ -778,6 +828,8 @@ THREE.ShaderLib = {
 
 				THREE.ShaderChunk[ "lights_vertex" ],
 				THREE.ShaderChunk[ "skinning_vertex" ],
+				THREE.ShaderChunk[ "morphtarget_vertex" ],
+				THREE.ShaderChunk[ "default_vertex" ],
 
 			"}"
 

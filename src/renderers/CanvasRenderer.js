@@ -20,8 +20,12 @@ THREE.CanvasRenderer = function () {
 	_contextFillStyle = null,
 	_contextLineWidth = 1,
 
-	_v1, _v2, _v3,
+	_v1, _v2, _v3, _v4,
+	_v5 = new THREE.RenderableVertex(),
+	_v6 = new THREE.RenderableVertex(),
+
 	_v1x, _v1y, _v2x, _v2y, _v3x, _v3y,
+	_v4x, _v4y, _v5x, _v5y, _v6x, _v6y,
 
 	_color = new THREE.Color(),
 	_color1 = new THREE.Color(),
@@ -31,7 +35,7 @@ THREE.CanvasRenderer = function () {
 
 	_near, _far,
 
-	_bitmap,
+	_bitmap, _uvs,
 	_uv1x, _uv1y, _uv2x, _uv2y, _uv3x, _uv3y,
 
 	_clipRect = new THREE.Rectangle(),
@@ -170,9 +174,12 @@ THREE.CanvasRenderer = function () {
 				_v1 = element;
 				_v1.x *= _canvasWidthHalf; _v1.y *= _canvasHeightHalf;
 
-				for ( m = 0, ml = element.materials.length; m < ml; m++ ) {
+				m = 0; ml = element.materials.length;
 
-					renderParticle( _v1, element, element.materials[ m ], scene );
+				while( m < ml ) {
+
+					material = element.materials[ m ++ ];
+					material.opacity != 0 && renderParticle( _v1, element, material, scene );
 
 				}
 
@@ -192,7 +199,8 @@ THREE.CanvasRenderer = function () {
 
 					while ( m < ml ) {
 
-						renderLine( _v1, _v2, element, element.materials[ m ++ ], scene );
+						material = element.materials[ m ++ ];
+						material.opacity != 0 && renderLine( _v1, _v2, element, material, scene );
 
 					}
 
@@ -234,7 +242,7 @@ THREE.CanvasRenderer = function () {
 							while ( fm < fml ) {
 
 								material = element.faceMaterials[ fm ++ ];
-								material && renderFace3( _v1, _v2, _v3, element, material, scene );
+								material && material.opacity != 0 && renderFace3( _v1, _v2, _v3, 0, 1, 2, element, material, scene );
 
 							}
 
@@ -242,7 +250,64 @@ THREE.CanvasRenderer = function () {
 
 						}
 
-						renderFace3( _v1, _v2, _v3, element, material, scene );
+						material.opacity != 0 && renderFace3( _v1, _v2, _v3, 0, 1, 2, element, material, scene );
+
+					}
+
+				}
+
+			} else if ( element instanceof THREE.RenderableFace4 ) {
+
+				_v1 = element.v1; _v2 = element.v2; _v3 = element.v3; _v4 = element.v4;
+
+				_v1.positionScreen.x *= _canvasWidthHalf; _v1.positionScreen.y *= _canvasHeightHalf;
+				_v2.positionScreen.x *= _canvasWidthHalf; _v2.positionScreen.y *= _canvasHeightHalf;
+				_v3.positionScreen.x *= _canvasWidthHalf; _v3.positionScreen.y *= _canvasHeightHalf;
+				_v4.positionScreen.x *= _canvasWidthHalf; _v4.positionScreen.y *= _canvasHeightHalf;
+
+				_v5.positionScreen.copy( _v2.positionScreen );
+				_v6.positionScreen.copy( _v4.positionScreen );
+
+				if ( element.overdraw ) {
+
+					expand( _v1.positionScreen, _v2.positionScreen );
+					expand( _v2.positionScreen, _v4.positionScreen );
+					expand( _v4.positionScreen, _v1.positionScreen );
+
+					expand( _v3.positionScreen, _v5.positionScreen );
+					expand( _v3.positionScreen, _v6.positionScreen );
+
+				}
+
+				_bboxRect.addPoint( _v1.positionScreen.x, _v1.positionScreen.y );
+				_bboxRect.addPoint( _v2.positionScreen.x, _v2.positionScreen.y );
+				_bboxRect.addPoint( _v3.positionScreen.x, _v3.positionScreen.y );
+				_bboxRect.addPoint( _v4.positionScreen.x, _v4.positionScreen.y );
+
+				if ( _clipRect.instersects( _bboxRect ) ) {
+
+					m = 0; ml = element.meshMaterials.length;
+
+					while ( m < ml ) {
+
+						material = element.meshMaterials[ m ++ ];
+
+						if ( material instanceof THREE.MeshFaceMaterial ) {
+
+							fm = 0; fml = element.faceMaterials.length;
+
+							while ( fm < fml ) {
+
+								material = element.faceMaterials[ fm ++ ];
+								material && material.opacity != 0 && renderFace4( _v1, _v2, _v3, _v4, _v5, _v6, element, material, scene );
+
+							}
+
+							continue;
+
+						}
+
+						material.opacity != 0 && renderFace4( _v1, _v2, _v3, _v4, _v5, _v6, element, material, scene );
 
 					}
 
@@ -355,8 +420,6 @@ THREE.CanvasRenderer = function () {
 
 		function renderParticle ( v1, element, material, scene ) {
 
-			if ( material.opacity == 0 ) return;
-
 			setOpacity( material.opacity );
 			setBlending( material.blending );
 
@@ -391,8 +454,8 @@ THREE.CanvasRenderer = function () {
 					_context.translate( v1.x, v1.y );
 					_context.rotate( - element.rotation );
 					_context.scale( scaleX, - scaleY );
-					_context.translate( - bitmapWidth, - bitmapHeight );
 
+					_context.translate( - bitmapWidth, - bitmapHeight );
 					_context.drawImage( bitmap, 0, 0 );
 
 					_context.restore();
@@ -410,7 +473,7 @@ THREE.CanvasRenderer = function () {
 				_context.stroke();
 				*/
 
-			} else if ( material instanceof THREE.ParticleCircleMaterial ) {
+			} else if ( material instanceof THREE.ParticleCanvasMaterial ) {
 
 				if ( _enableLighting ) {
 
@@ -441,18 +504,13 @@ THREE.CanvasRenderer = function () {
 
 				}
 
-				setFillStyle( _color.__styleString );
-
 				_context.save();
 				_context.translate( v1.x, v1.y );
 				_context.rotate( - element.rotation );
 				_context.scale( width, height );
 
-				_context.beginPath();
-				_context.arc( 0, 0, 1, 0, _pi2, true );
-				_context.closePath();
+				material.program( _context, _color );
 
-				_context.fill();
 				_context.restore();
 
 			}
@@ -460,8 +518,6 @@ THREE.CanvasRenderer = function () {
 		}
 
 		function renderLine( v1, v2, element, material, scene ) {
-
-			if ( material.opacity == 0 ) return;
 
 			setOpacity( material.opacity );
 			setBlending( material.blending );
@@ -485,9 +541,7 @@ THREE.CanvasRenderer = function () {
 
 		}
 
-		function renderFace3( v1, v2, v3, element, material, scene ) {
-
-			if ( material.opacity == 0 ) return;
+		function renderFace3( v1, v2, v3, uv1, uv2, uv3, element, material, scene ) {
 
 			setOpacity( material.opacity );
 			setBlending( material.blending );
@@ -500,11 +554,12 @@ THREE.CanvasRenderer = function () {
 
 			if ( material instanceof THREE.MeshBasicMaterial ) {
 
-				if ( material.map/* && !material.wireframe*/ ) {					
+				if ( material.map/* && !material.wireframe*/ ) {
 
 					if ( material.map.mapping instanceof THREE.UVMapping ) {
 
-						texturePath( _v1x, _v1y, _v2x, _v2y, _v3x, _v3y, material.map.image, element.uvs[ 0 ].u, element.uvs[ 0 ].v, element.uvs[ 1 ].u, element.uvs[ 1 ].v, element.uvs[ 2 ].u, element.uvs[ 2 ].v );
+						_uvs = element.uvs[ 0 ];
+						texturePath( _v1x, _v1y, _v2x, _v2y, _v3x, _v3y, material.map.image, _uvs[ uv1 ].u, _uvs[ uv1 ].v, _uvs[ uv2 ].u, _uvs[ uv2 ].v, _uvs[ uv3 ].u, _uvs[ uv3 ].v );
 
 					}
 
@@ -530,7 +585,7 @@ THREE.CanvasRenderer = function () {
 
 						texturePath( _v1x, _v1y, _v2x, _v2y, _v3x, _v3y, material.envMap.image, _uv1x, _uv1y, _uv2x, _uv2y, _uv3x, _uv3y );
 
-					}/* else if ( material.envMap.mapping == THREE.RefractionMapping ) {
+					}/* else if ( material.envMap.mapping == THREE.SphericalRefractionMapping ) {
 
 						
 
@@ -549,7 +604,8 @@ THREE.CanvasRenderer = function () {
 
 					if ( material.map.mapping instanceof THREE.UVMapping ) {
 
-						texturePath( _v1x, _v1y, _v2x, _v2y, _v3x, _v3y, material.map.image, element.uvs[ 0 ].u, element.uvs[ 0 ].v, element.uvs[ 1 ].u, element.uvs[ 1 ].v, element.uvs[ 2 ].u, element.uvs[ 2 ].v );
+						_uvs = element.uvs[ 0 ];
+						texturePath( _v1x, _v1y, _v2x, _v2y, _v3x, _v3y, material.map.image, _uvs[ uv1 ].u, _uvs[ uv1 ].v, _uvs[ uv2 ].u, _uvs[ uv2 ].v, _uvs[ uv3 ].u, _uvs[ uv3 ].v );
 
 					}
 
@@ -592,7 +648,7 @@ THREE.CanvasRenderer = function () {
 						_color.updateStyleString();
 						material.wireframe ? strokePath( _color.__styleString, material.wireframeLinewidth ) : fillPath( _color.__styleString );
 
-					} 
+					}
 
 				} else {
 
@@ -601,11 +657,6 @@ THREE.CanvasRenderer = function () {
 				}
 
 			} else if ( material instanceof THREE.MeshDepthMaterial ) {
-
-				/*
-				_w = 1 - ( material.__2near / (material.__farPlusNear - element.z * material.__farMinusNear ) );
-				_color.setRGB( _w, _w, _w );
-				*/
 
 				_near = camera.near;
 				_far = camera.far;
@@ -635,6 +686,121 @@ THREE.CanvasRenderer = function () {
 
 		}
 
+		function renderFace4( v1, v2, v3, v4, v5, v6, element, material, scene ) {
+
+			setOpacity( material.opacity );
+			setBlending( material.blending );
+
+			if ( material.map || material.envMap ) {
+
+				// Let renderFace3() handle this
+
+				renderFace3( v1, v2, v4, 0, 1, 3, element, material, scene );
+				renderFace3( v5, v3, v6, 1, 2, 3, element, material, scene );
+
+				return;
+
+			}
+
+			_v1x = v1.positionScreen.x; _v1y = v1.positionScreen.y;
+			_v2x = v2.positionScreen.x; _v2y = v2.positionScreen.y;
+			_v3x = v3.positionScreen.x; _v3y = v3.positionScreen.y;
+			_v4x = v4.positionScreen.x; _v4y = v4.positionScreen.y;
+			_v5x = v5.positionScreen.x; _v5y = v5.positionScreen.y;
+			_v6x = v6.positionScreen.x; _v6y = v6.positionScreen.y;
+
+			if ( material instanceof THREE.MeshBasicMaterial ) {
+
+				drawQuad( _v1x, _v1y, _v2x, _v2y, _v3x, _v3y, _v4x, _v4y );
+				material.wireframe ? strokePath( material.color.__styleString, material.wireframeLinewidth ) : fillPath( material.color.__styleString );
+
+			} else if ( material instanceof THREE.MeshLambertMaterial ) {
+
+				if ( _enableLighting ) {
+
+					if ( !material.wireframe && material.shading == THREE.SmoothShading && element.vertexNormalsWorld.length == 4 ) {
+
+						_color1.r = _color2.r = _color3.r = _color4.r = _ambientLight.r;
+						_color1.g = _color2.g = _color3.g = _color4.g = _ambientLight.g;
+						_color1.b = _color2.b = _color3.b = _color4.b = _ambientLight.b;
+
+						calculateLight( scene, element.v1.positionWorld, element.vertexNormalsWorld[ 0 ], _color1 );
+						calculateLight( scene, element.v2.positionWorld, element.vertexNormalsWorld[ 1 ], _color2 );
+						calculateLight( scene, element.v4.positionWorld, element.vertexNormalsWorld[ 3 ], _color3 );
+						calculateLight( scene, element.v3.positionWorld, element.vertexNormalsWorld[ 2 ], _color4 );
+
+						_bitmap = getGradientTexture( _color1, _color2, _color3, _color4 );
+
+						// TODO: UVs are incorrect, v4->v3?
+
+						drawTriangle( _v1x, _v1y, _v2x, _v2y, _v4x, _v4y );
+						texturePath( _v1x, _v1y, _v2x, _v2y, _v4x, _v4y, _bitmap, 0, 0, 1, 0, 0, 1 );
+
+						drawTriangle( _v5x, _v5y, _v3x, _v3y, _v6x, _v6y );
+						texturePath( _v5x, _v5y, _v3x, _v3y, _v6x, _v6y, _bitmap, 1, 0, 1, 1, 0, 1 );
+
+					} else {
+
+						_light.r = _ambientLight.r;
+						_light.g = _ambientLight.g;
+						_light.b = _ambientLight.b;
+
+						calculateLight( scene, element.centroidWorld, element.normalWorld, _light );
+
+						_color.r = material.color.r * _light.r;
+						_color.g = material.color.g * _light.g;
+						_color.b = material.color.b * _light.b;
+
+						_color.updateStyleString();
+
+						drawQuad( _v1x, _v1y, _v2x, _v2y, _v3x, _v3y, _v4x, _v4y );
+						material.wireframe ? strokePath( _color.__styleString, material.wireframeLinewidth ) : fillPath( _color.__styleString );
+
+					}
+
+				} else {
+
+					drawQuad( _v1x, _v1y, _v2x, _v2y, _v3x, _v3y, _v4x, _v4y );
+					material.wireframe ? strokePath( material.color.__styleString, material.wireframeLinewidth ) : fillPath( material.color.__styleString );
+
+				}
+
+			} else if ( material instanceof THREE.MeshNormalMaterial ) {
+
+				_color.r = normalToComponent( element.normalWorld.x );
+				_color.g = normalToComponent( element.normalWorld.y );
+				_color.b = normalToComponent( element.normalWorld.z );
+				_color.updateStyleString();
+
+				drawQuad( _v1x, _v1y, _v2x, _v2y, _v3x, _v3y, _v4x, _v4y );
+				material.wireframe ? strokePath( _color.__styleString, material.wireframeLinewidth ) : fillPath( _color.__styleString );
+
+			} else if ( material instanceof THREE.MeshDepthMaterial ) {
+
+				_near = camera.near;
+				_far = camera.far;
+
+				_color1.r = _color1.g = _color1.b = 1 - smoothstep( v1.positionScreen.z, _near, _far );
+				_color2.r = _color2.g = _color2.b = 1 - smoothstep( v2.positionScreen.z, _near, _far );
+				_color3.r = _color3.g = _color3.b = 1 - smoothstep( v4.positionScreen.z, _near, _far );
+				_color4.r = _color4.g = _color4.b = 1 - smoothstep( v3.positionScreen.z, _near, _far );
+
+				_bitmap = getGradientTexture( _color1, _color2, _color3, _color4 );
+
+				// TODO: UVs are incorrect, v4->v3?
+
+				drawTriangle( _v1x, _v1y, _v2x, _v2y, _v4x, _v4y );
+				texturePath( _v1x, _v1y, _v2x, _v2y, _v4x, _v4y, _bitmap, 0, 0, 1, 0, 0, 1 );
+
+				drawTriangle( _v5x, _v5y, _v3x, _v3y, _v6x, _v6y );
+				texturePath( _v5x, _v5y, _v3x, _v3y, _v6x, _v6y, _bitmap, 1, 0, 1, 1, 0, 1 );
+
+			}
+
+		}
+
+		//
+
 		function drawTriangle( x0, y0, x1, y1, x2, y2 ) {
 
 			_context.beginPath();
@@ -646,7 +812,6 @@ THREE.CanvasRenderer = function () {
 
 		}
 
-		/*
 		function drawQuad( x0, y0, x1, y1, x2, y2, x3, y3 ) {
 
 			_context.beginPath();
@@ -658,7 +823,6 @@ THREE.CanvasRenderer = function () {
 			_context.closePath();
 
 		}
-		*/
 
 		function strokePath( color, linewidth ) {
 
@@ -679,6 +843,37 @@ THREE.CanvasRenderer = function () {
 		}
 
 		function texturePath( x0, y0, x1, y1, x2, y2, bitmap, u0, v0, u1, v1, u2, v2 ) {
+
+			/*
+			// http://tulrich.com/geekstuff/canvas/jsgl.js
+
+			var m11, m12, m21, m22, dx, dy, denom,
+			width = bitmap.width - 1,
+			height = bitmap.height - 1;
+
+			u0 *= width; v0 *= height;
+			u1 *= width; v1 *= height;
+			u2 *= width; v2 *= height;
+
+			_context.save();
+
+			denom = u0 * (v2 - v1) - u1 * v2 + u2 * v1 + (u1 - u2) * v0;
+
+			if ( denom == 0 ) return;
+
+			m11 = - (v0 * (x2 - x1) - v1 * x2 + v2 * x1 + (v1 - v2) * x0) / denom;
+			m12 = (v1 * y2 + v0 * (y1 - y2) - v2 * y1 + (v2 - v1) * y0) / denom;
+			m21 = (u0 * (x2 - x1) - u1 * x2 + u2 * x1 + (u1 - u2) * x0) / denom;
+			m22 = - (u1 * y2 + u0 * (y1 - y2) - u2 * y1 + (u2 - u1) * y0) / denom;
+			dx = (u0 * (v2 * x1 - v1 * x2) + v0 * (u1 * x2 - u2 * x1) + (u2 * v1 - u1 * v2) * x0) / denom;
+			dy = (u0 * (v2 * y1 - v1 * y2) + v0 * (u1 * y2 - u2 * y1) + (u2 * v1 - u1 * v2) * y0) / denom;
+
+			_context.transform( m11, m12, m21, m22, dx, dy );
+
+			_context.clip();
+			_context.drawImage( bitmap, 0, 0 );
+			_context.restore();
+			*/
 
 			// http://extremelysatisfactorytotalitarianism.com/blog/?p=2120
 

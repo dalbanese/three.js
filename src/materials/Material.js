@@ -2,8 +2,13 @@
  * @author mr.doob / http://mrdoob.com/
  */
 
-THREE.FlatShading = 0;
-THREE.SmoothShading = 1;
+THREE.NoShading = 0;
+THREE.FlatShading = 1;
+THREE.SmoothShading = 2;
+
+THREE.NoColors = 0;
+THREE.FaceColors = 1;
+THREE.VertexColors = 2;
 
 THREE.NormalBlending = 0;
 THREE.AdditiveBlending = 1;

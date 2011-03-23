@@ -1,0 +1,64 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<title>ShapeShot Viewer</title>
+		<meta charset="utf-8">
+        <style type="text/css" media="all">
+			@import "css/ss_webgl_viewer.css";
+			@import "css/colorbox.css";
+		</style>     
+	</head>
+	
+	<body>
+    	<body oncontextmenu="return false;">
+		<div id="d">
+			<h1>three.js Implementation of SS Viewer</h1>
+			<br/>
+			<p>Newt BobbleheadModel
+            
+            <div style="position:absolute; right:20px; top:50px;">
+                <span id="rReset" class="button">Reset View</span>
+                <br>
+                <br> 
+                <span id="rChangeShader" class="button">Change Shader</span> 
+                <br>
+                <br> 
+                <span id="rAutoZoom" class="button">Auto Zoom</span> 
+                <br>
+                <br> 
+                <span id="rMoveScale" class="button">Move Scale for Auto Zoom Test</span>
+                <br>
+                <br> 
+                <span id="rAutoRotate" class="button">Auto Rotate</span> 
+                <br>
+                <br> 
+                <a class='textureViewer' href="obj/newt/newt_normal.jpg"><span id="rTextureViewer" class="button">Texture Viewer</span></a>
+                <!--<input type="button" value="Texture Viewer" class="textureViewer" onClick="toggleTextureViewer()" >-->
+                <br>
+                <br> 
+                <span id="rScreenshot" class="button">Screenshot</span> 
+            </div>
+                
+            <p>Please be patient while the mesh is loading. It may take a while, it's 2MB file.
+			<br/>
+			<p>Best viewed in Chrome 8/9 or Firefox 4 using WebGL renderer.
+			<p>Use the flag --allow-file-access-from-files if working localy in Chrome.
+		</div>
+		
+		<pre id="log"></pre>
+
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+        <script src="js/jquery.colorbox-min.js"></script>
+		<script type="text/javascript" src="../build/Three.js"></script>
+		<script type="text/javascript" src="../src/extras/io/Loader.js"></script>
+        <script type="text/javascript" src="js/ss_webgl_eventHandling.js"></script>
+        <script type="text/javascript" src="js/ss_webgl_viewer.js"></script>
+        
+        <script> 
+			$(document).ready(function(){
+				$(".textureViewer").colorbox();
+			});
+		</script> 
+
+	</body>
+</html>
